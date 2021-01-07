@@ -1,0 +1,620 @@
+
+*************************************************************************
+* Replication files for "Stealth Consolidation" by Thomas G. Wollmann,
+* for AER: Insights, 2018. 
+*************************************************************************
+
+set more off
+
+* ---------------------------------------------------------------------
+* Import data and save to .dta format
+* ---------------------------------------------------------------------
+
+* Import and save SIC code translation
+* This links four-digit SIC codes to the names of the industries to which they refer. 
+import excel sic_codes,clear first case(lower)
+duplicates drop sic,force
+compress
+save sic_codes.dta,replace
+
+* Import and save data related to notification/enforcement data
+* This comprises premerger notifications, investigations, and blocked mergers by year. 
+import excel using notif_and_invest_and_block,clear first case(lower) 
+save notif_and_invest_and_block.dta,replace
+
+* Import and save (year,size,SIC type) merger data 
+* This provides the number of mergers by year, by whether it involves a target and acquirer in the 
+* same four-digit SIC code, by whether the merger occured in the "pre-packaged software" industry,
+* and by whether the adjusted value of the merger exceed $150MM. * The latter two are required for
+* tables reported in the Appendix. 
+import excel mergers_by_year_size_sic_type,clear first case(lower)
+save mergers_by_year_size_sic_type.dta,replace
+
+* Import and save (stealth type,SIC) merger data 
+import excel mergers_by_stealth_type_sic,clear first case(lower)
+save mergers_by_stealth_type_sic,replace
+
+* ---------------------------------------------------------------------
+* Merge, format, and save together
+* ---------------------------------------------------------------------
+
+use mergers_by_year_size_sic_type,clear
+collapse (sum) diff_4sic same_4sic diff_4sic_dollars same_4sic_dollars ,by(year_e ex_grp)
+
+* Log variables that are in levels. Also, reduce by value the resulting 
+* variables take in 2001, which is the year of the Amendment. 
+* This is needed for Figure III.
+foreach var1 in diff_4sic same_4sic diff_4sic_dollars same_4sic_dollars  {
+	g log_`var1'=log(`var1')
+	g norm_`var1'=`var1'
+	foreach var2 in 1 2 {
+		quietly summ log_`var1' if year_e==2001 & ex_grp==`var2'
+		replace log_`var1'=log_`var1'-`r(mean)' if ex_grp==`var2'
+		quietly summ norm_`var1' if year_e==2001 & ex_grp==`var2'
+		replace norm_`var1'=norm_`var1'-`r(mean)' if ex_grp==`var2'
+		}
+	}
+
+* Merge into merger data the notifications, investigations, and blocked transactions
+merge m:1 year_e using notif_and_invest_and_block
+drop _m
+* Rename, format, and save variables
+rename trans_hsr trans_hsr_a_and_b
+g trans_hsr=trans_hsr_below if ex_grp==1
+replace trans_hsr=trans_hsr_above if ex_grp==2
+drop trans_hsr_below trans_hsr_above
+g all_4sic=diff_4sic+same_4sic
+save merged_data.dta,replace
+
+* Eliminate interim files that will not be used again
+erase notif_and_invest_and_block.dta
+
+* ------------------------------------------------------------------------
+* Create figure1
+* ------------------------------------------------------------------------
+
+use merged_data.dta,clear
+label var trans_hsr_a_and_b "Notifications"
+
+scatter trans_hsr_a_and_b year_e,xline(2001) ytit("Count",margin(0 3 0 0)) /// 
+xtitle("Year",margin(0 0 0 2)) ylabel(1000(1000)4000,nogrid ) yscale(r(400 4200)) xlabel(1995(5)2010) xscale(r(1993 2011)) plotregion(fcolor(white) color(white)) graphregion(fcolor(white) color(white))
+
+graph export figure1.pdf,as(pdf) replace
+graph drop _all
+
+* ------------------------------------------------------------------------
+* Create figure2
+* ------------------------------------------------------------------------
+
+use merged_data.dta,clear
+label var c_below "HSR-only invest."
+label var c_above "Investigations"
+label var c_all_below_nonhsr_cid "Investigations"
+local ti1 Notifications of never-exempt mergers 
+local ti2 Notifications of newly-exempt mergers
+local ti3 Investigations into never-exempt mergers
+local ti4 Investigations into newly-exempt mergers
+label var all_4sic "Mergers"
+label var trans_hsr "Notifications"
+
+twoway (line all_4  year_e if ex_grp==2, xline(2001) ytit("Count",margin(0 2 0 0)) /// 
+title("Panel A: `ti1'") xtitle("Year",margin(0 0 0 1))   ) (line trans_hsr year_e if ex_grp==2 ///
+, lpattern(shortdash) ylabel(0(1000)2000,axis(1) nogrid) xscale(r(1993 2011)) ) , graphregion(fcolor(white) color(white)) nodraw name(g1) 
+
+twoway (line all_4 year_e if ex_grp==1  ,title("Panel B: `ti2'")  xline(2001) ytit("Count",margin(0 2 0 0)) /// 
+xtitle("Year",margin(0 0 0 1))   ) (line trans_hsr year_e if ex_grp==1 , ///
+lpattern(shortdash) ylabel(0(1000)3000,axis(1) nogrid)  xscale(r(1993 2011)) ) , graphregion(fcolor(white)  color(white)) nodraw name(g2) 
+
+twoway (line all_4  year_e if ex_grp==2,title("Panel C: `ti3'")  xline(2001) ytit("Count",margin(0 2 0 0)) /// 
+ylabel(,nogrid nogmax nogmin) xtitle("Year",margin(0 0 0 1))   ) (line c_above year_e  if ex_grp==2,yaxis(2) ytit("",axis(2)) ///
+lpattern(shortdash) yscale(r(475 2200) axis(1)) ylabel(500(500)2000,axis(1) nogrid nogmax nogmin) yscale(r(140 375) axis(2)) ylabel(150(50)350,axis(2) nogrid nogmax nogmin) xscale(r(1993 2011)) ) , ///
+graphregion(fcolor(white)  color(white)) nodraw name(g3) 
+
+twoway (line all_4  year_e  if ex_grp==1,xlab(,nogrid) title("Panel D: `ti4'")  xline(2001) ytit("Count",margin(0 2 0 0)) /// 
+xtitle("Year",margin(0 0 0 1))   ) (line c_below  year_e  if ex_grp==1,yaxis(2) ytit("",axis(2)) ///
+lpattern(shortdash) yscale(r(0 3200) axis(1)) ylabel(0(1000)3000,axis(1) nogrid) yscale(r(0 250) axis(2)) ylabel(0(50)250,axis(2) nogrid ) ///
+xscale(r(1993 2011)) ) ///
+(line  c_all_below_nonhsr_cid year_e  if ex_grp==1,yaxis(2) ytit("",axis(2)) ///
+lpattern(dash) yscale(r(0 3200) axis(1)) ylabel(0(1000)3000,axis(1) nogrid ) yscale(r(0 250) axis(2)) ylabel(0(50)250,axis(2) nogrid ) ///
+xscale(r(1993 2011)) ), ///
+graphregion(fcolor(white)  color(white)) nodraw name(g4) legend(colgap(*.25) keygap(*.25)) legend(r(1))
+
+* Combine and save
+graph combine g1 g2 g3 g4 ,c(2) xsize(8) ysize(6) graphregion(fcolor(white) color(white) ) iscale(*.5) imargin(large) //fcolor(green) ifcolor(organge)
+graph export figure2.pdf,as(pdf) replace
+graph drop _all
+
+* ------------------------------------------------------------------------
+* Create figure3
+* ------------------------------------------------------------------------
+
+use merged_data.dta,clear
+label var log_same_4sic "Horizontal"
+label var log_diff_4sic "Non-horizontal"
+
+twoway (line log_diff_4sic year_e if ex_grp==1, ylabel(,nogrid) xline(2001) lpattern(longdash) xscale(r(1993 2011)) xlabel(1995(5)2010) xtitle("Year",margin(0 0 0 2)) ytit("Log count",margin(0 3 0 0))) ///
+(line log_same_4sic  year_e if ex_grp==1, lpattern(shortdash)    ), ///
+	graphregion(fcolor(white) color(white)) nodraw name(g1) legend(r(1)) title("Panel B: Newly-exempt mergers",size(medium)) 
+
+twoway (line log_diff_4sic year_e if ex_grp==2,xline(2001) lpattern(longdash) xscale(r(1993 2011)) xlabel(1995(5)2010) ytit("Log count",margin(0 3 0 0))) ///
+(line log_same_4sic year_e if ex_grp==2, ylabel(,nogrid) lpattern(shortdash) xtitle("")  ), ///
+	graphregion(fcolor(white) color(white))  nodraw name(g2) legend(r(1)) title("Panel A: Never-exempt mergers",size(medium)) 
+
+* Combine and save
+graph combine g2 g1,c(1) xsize(6) ysize(8) graphregion(fcolor(white) color(white) ) iscale(*.9) //iscale(*.875) 
+graph export figure3.pdf,as(pdf) replace
+graph drop _all
+
+* ------------------------------------------------------------------------
+* Table 1 ("diffs")
+* ------------------------------------------------------------------------
+
+use merged_data.dta,clear
+keep ex_grp year_e same_4sic diff_4sic
+rename same_4sic levels_1
+rename diff_4sic levels_2
+
+* Format for reg
+g logs_1=log(levels_1)
+g logs_2=log(levels_2)
+reshape long logs_ levels_,i(year_e ex_grp) j(num) 
+g post = year_e>2001
+g below=ex_grp==1
+g hor = num==1
+g iii = post*hor*below
+g ii1 = post*hor 
+g ii2 = post*hor 
+
+label var iii " $ I_i^H \cdot I_s^{Exempted} \cdot I_t^{Post} $ "
+label var ii1 " $ I_i^H \cdot I_t^{Post} $ \textit{(Never--exempt)} \quad \quad \quad \quad"
+label var ii2 " $ I_i^H \cdot I_t^{Post} $ \textit{(Newly--exempt)}"
+
+* in logs
+reg logs ii2 i.year c.hor if below==1, robust
+outreg2 using diffs,replace tex(frag) label keep(iii ii1 ii2) ///
+	dec(3) fmt(gc) nonote ctitle(Newly-,exempt) nocons noas
+reg logs iii c.below i.year c.hor i.year#c.below i.year#c.hor c.below#c.hor , robust
+outreg2 using diffs,append tex(frag) label keep(iii ii1 ii2) ///
+	dec(3) fmt(gc) nonote ctitle(All,mergers) nocons noas
+reg logs ii1 i.year c.hor if below==0, robust
+outreg2 using diffs,append tex(frag) label keep(iii ii1 ii2) ///
+	dec(3) fmt(gc) nonote ctitle(Never-,exempt) nocons noas
+* in levels
+reg levels ii2 i.year c.hor if below==1, robust
+outreg2 using diffs,append tex(frag) label keep(iii ii1 ii2) ///
+	dec(3) fmt(gc) nonote ctitle(Newly-,exempt) nocons noas
+reg levels iii c.below i.year c.hor i.year#c.below i.year#c.hor c.below#c.hor , robust
+outreg2 using diffs,append tex(frag) label keep(iii ii1 ii2) ///
+	dec(3) fmt(gc) nonote ctitle(All,mergers) nocons noas
+reg levels ii1 i.year c.hor if below==0, robust
+outreg2 using diffs,append tex(frag) label keep(iii ii1 ii2) ///
+	dec(3) fmt(gc) nonote ctitle(Never-,exempt) nocons noas
+erase diffs.txt
+
+summ logs if below==1
+summ logs 
+summ logs if below==0
+summ levels if below==1
+summ levels 
+summ levels if below==0
+
+* ------------------------------------------------------------------------
+* Table 2 ("stealth_sics")
+* ------------------------------------------------------------------------
+
+* Simple tabulations of the industries by proportion
+use mergers_by_stealth_type_sic,clear
+
+g are_same = same_4sic
+g are_diff = diff_4sic
+
+keep acq* st_grp are_*
+reshape wide are_same are_diff , i(acq*) j(st_grp)
+foreach i in are_same1 are_diff1 are_same2 are_diff2 {
+	replace `i'=0 if `i'==.
+	}
+g prop1 = are_same1/(are_diff1+are_diff2+are_same1+are_same2)
+gsort -prop
+drop if are_same1<=31 
+keep if _n<=30
+compress
+
+keep acq* are_same1 prop1
+
+save temp.dta,replace
+use sic_codes,clear
+duplicates drop sic,force
+rename sic acq_sic
+rename sic_des acq_sic_des
+merge 1:1 acq_sic using temp
+drop if _m==1
+drop _m
+replace acq_sic_des=proper(acq_sic_des)
+
+erase temp.dta
+gsort -prop
+
+replace acq_sic_d=subinstr(acq_sic_d,"&"," and ",.)
+replace acq_sic_d=subinstr(acq_sic_d,"Mfg.","Manufacturing",.)
+replace acq_sic_d=subinstr(acq_sic_d,"s-","s: ",.)
+replace acq_sic_d=subinstr(acq_sic_d,"le-","le: ",.)
+replace acq_sic_d=subinstr(acq_sic_d,", Nec"," (NEC)",.)
+replace acq_sic_d=subinstr(acq_sic_d,"And","and",.)
+replace acq_sic_d=itrim(acq_sic_d)
+replace acq_sic_d="HVAC Wholesalers" if regexm(acq_sic_d,"Warm Air")
+replace acq_sic_d="Florist Wholesalers" if regexm(acq_sic_d,"Flower, N")
+replace acq_sic_d="Wine and Alcohol Wholesalers" if regexm(acq_sic_d,"Wine and")
+replace acq_sic_d="Plumbing, Heating, and AC Contractors" if regexm(acq_sic_d,"Plumbing, Heat")
+replace acq_sic_d="Hospitals: General, Surgical, and NEC" if regexm(acq_sic_d,"General Medical and S")
+replace acq_sic_d=subinstr(acq_sic_d,"Services: ","",.)
+replace acq_sic_d=itrim(acq_sic_d)
+compress
+g string1=trim(acq_sic_d) + " & " + string(100*prop1, "%8.0f") + "\% "
+keep string1
+g id=_n
+save stealth_sics1.dta,replace
+
+* Industries by count
+use mergers_by_stealth_type_sic,clear
+
+g are_same = same_4sic
+g are_diff = diff_4sic
+
+keep acq* st_grp are_*
+reshape wide are_same are_diff , i(acq*) j(st_grp)
+foreach i in are_same1 are_diff1 are_same2 are_diff2 {
+	replace `i'=0 if `i'==.
+	}
+gsort -are_same1
+keep if are_same1>=200
+keep if _n<=30
+compress
+g all=are_same1+are_same2+are_diff1+are_diff2
+keep acq are_same1 all 
+compress
+
+save temp.dta,replace
+use sic_codes,clear
+duplicates drop sic,force
+rename sic acq_sic
+rename sic_des acq_sic_des
+merge 1:1 acq_sic using temp
+drop if _m==1
+drop _m
+replace acq_sic_des=proper(acq_sic_des)
+
+erase temp.dta
+gsort -are_same
+
+replace acq_sic_d=subinstr(acq_sic_d,"&"," and ",.)
+replace acq_sic_d=subinstr(acq_sic_d,"Mfg.","Manufacturing",.)
+replace acq_sic_d=subinstr(acq_sic_d,"s-","s: ",.)
+replace acq_sic_d=subinstr(acq_sic_d,"le-","le: ",.)
+replace acq_sic_d=subinstr(acq_sic_d,", Nec"," (NEC)",.)
+replace acq_sic_d=subinstr(acq_sic_d,"And","and",.)
+replace acq_sic_d=itrim(acq_sic_d)
+replace acq_sic_d="HVAC Wholesalers" if regexm(acq_sic_d,"Warm Air")
+replace acq_sic_d="Florist Wholesalers" if regexm(acq_sic_d,"Flower, N")
+replace acq_sic_d="Wine and Alcohol Wholesalers" if regexm(acq_sic_d,"Wine and")
+replace acq_sic_d="Plumbing, Heating, and AC Contractors" if regexm(acq_sic_d,"Plumbing, Heat")
+replace acq_sic_d="Hospitals: General, Surgical, and NEC" if regexm(acq_sic_d,"General Medical and S")
+replace acq_sic_d=subinstr(acq_sic_d," (No "," (Not ",.)
+replace acq_sic_d=subinstr(acq_sic_d,", ("," (",.)
+replace acq_sic_d=subinstr(acq_sic_d,"&"," and ",.)
+replace acq_sic_d=subinstr(acq_sic_d,"Services: ","",.)
+replace acq_sic_d=itrim(acq_sic_d)
+compress
+g string2=trim(acq_sic_d) + " & " + string(are_same1) + " \\ "
+keep string2
+g id=_n
+merge 1:1 id using stealth_sics1
+g string12=string1 + " & & " + string2
+erase stealth_sics1.dta
+export delim string12 using stealth_sics.tex,replace novar delimiter(tab)
+
+***************************************************************************
+* Appendix Figures/Tables
+***************************************************************************
+
+* ----------------------------------------------------------------------------
+* Plotting blocked mergers
+* ----------------------------------------------------------------------------
+
+use merged_data.dta,clear
+collapse (sum) all_4sic (mean) all_blocked ,by(year)
+label var all_4sic "Mergers"
+label var all_blocked "Blocked mergers"
+
+twoway (line all_4  year_e ,xline(2001)  xtitle("Year",margin(0 0 0 2))  lpattern(longdash) ) ///
+(line all_blocked year_e ,   yaxis(2) lpattern(shortdash) xscale(r(1993 2011)) ) , plotregion(fcolor(white)) graphregion(fcolor(white) ) name(g1) legend(r(1)) 
+
+* Save 
+graph export blocked_and_trans_by_year.pdf,as(pdf) replace
+graph drop _all
+
+* --------------------------------------------------------------------
+* Summarizing statistics for table output
+* --------------------------------------------------------------------
+
+use merged_data.dta,clear
+rename all_4 trans_thom1 
+g  trans_thom_above1 =trans_thom1 if ex_grp==2
+g  trans_thom_below1=trans_thom1 if ex_grp==1
+g  trans_hsr_above =trans_hsr if ex_grp==2
+g  trans_hsr_below=trans_hsr if ex_grp==1
+
+collapse (sum) trans_hsr trans_thom1 (max) trans_thom_above trans_thom_below trans_hsr_above trans_hsr_below c_* all_block, by(year_e)
+g c_all=c_above+c_below
+
+label var trans_thom1 "\ \ \ \ All mergers"
+label var trans_thom_below1 "\ \ \ \ \ \ \ \ \ \ Newly-exempt mergers"
+label var trans_thom_above1 "\ \ \ \ \ \ \ \ \ \ Never-exempt mergers"
+label var trans_hsr "\ \ \ \ All notifications"
+label var trans_hsr_below "\ \ \ \ \ \ \ \ \ \ Newly-exempt notifications \ \ \ \ \ \ \ \ \ "
+label var trans_hsr_above "\ \ \ \ \ \ \ \ \ \ Never-exempt notifications "
+
+label var c_all "\ \ \ \ All investigations"
+label var c_below "\ \ \ \ \ \ \ \ \ \ Newly-exempt HSR-only investigations"
+label var c_all_below_nonhsr_cid "\ \ \ \ \ \ \ \ \ \ Never-exempt investigations"
+label var c_above "\ \ \ \ \ \ \ \ \ \ Never-exempt investigations"
+label var all_blocked "\ \ \ \ Blocked mergers"
+
+g temp1 = trans_hsr  if year<=2000
+g temp2 = trans_hsr_above  if year<=2000
+g temp3 = trans_hsr_below  if year<=2000
+g temp4 = trans_thom1 if year<=2000
+g temp5 = trans_thom_above1  if year<=2000
+g temp6 = trans_thom_below1  if year<=2000
+g temp7 = c_all if year<=2000
+g temp8 = c_above if year<=2000
+g temp9 = c_below  if year<=2000
+g temp10 = c_all_below_nonhsr_cid  if year<=2000
+g temp11 = all_blocked if year<=2000
+
+g temp101 = trans_hsr  if year>2001
+g temp102 = trans_hsr_above  if year>2001
+g temp103 = trans_hsr_below  if year>2001
+g temp104 = trans_thom1 if year>2001
+g temp105 = trans_thom_above1  if year>2001
+g temp106 = trans_thom_below1  if year>2001
+g temp107 = c_all if year>2001
+g temp108 = c_above if year>2001
+g temp109 = c_below  if year>2001
+g temp110 = c_all_below_nonhsr_cid  if year>2001
+g temp111 = all_blocked  if year>2001
+
+label var temp1 "\ \ \ \ All notifications"
+label var temp2 "\ \ \ \ \ \ \ \ \ \ Never-exempt notifications"
+label var temp3 "\ \ \ \ \ \ \ \ \ \ Newly-exempt notifications"
+label var temp4 "\ \ \ \ All mergers"
+label var temp5 "\ \ \ \ \ \ \ \ \ \ Never-exempt mergers"
+label var temp6 "\ \ \ \ \ \ \ \ \ \ Newly-exempt mergers"
+label var temp7 "\ \ \ \ All investigations"
+label var temp8 "\ \ \ \ \ \ \ \ \ \ Never-exempt investigations"
+label var temp9 "\ \ \ \ \ \ \ \ \ \ Newly-exempt HSR-only investigations"
+label var temp10 "\ \ \ \ \ \ \ \ \ \ Newly-exempt investigations"
+label var temp11 "\ \ \ \ Blocked mergers"
+
+label var temp101 "\ \ \ \ All notifications"
+label var temp102 "\ \ \ \ \ \ \ \ \ \ Never-exempt notifications"
+label var temp103 "\ \ \ \ \ \ \ \ \ \ Newly-exempt notifications"
+label var temp104 "\ \ \ \ All mergers"
+label var temp105 "\ \ \ \ \ \ \ \ \ \ Never-exempt mergers"
+label var temp106 "\ \ \ \ \ \ \ \ \ \ Newly-exempt mergers"
+label var temp107 "\ \ \ \ All investigations"
+label var temp108 "\ \ \ \ \ \ \ \ \ \ Never-exempt investigations"
+label var temp109 "\ \ \ \ \ \ \ \ \ \ Newly-exempt HSR-only investigations"
+label var temp110 "\ \ \ \ \ \ \ \ \ \ Newly-exempt investigations"
+label var temp111 "\ \ \ \ Blocked mergers"
+
+* Output table
+keep if year>=1994 & year<=2011
+estpost summarize trans_hsr trans_hsr_above trans_hsr_below trans_thom1 trans_thom_above1 trans_thom_below1 c_all c_above c_below c_all_below_nonhsr_cid all_blocked temp* ,detail
+	esttab using summ_main1,cells("count(fmt(%12.2gc)) mean(fmt(%12.0fc)) p50(fmt(%12.0fc))  sd(fmt(%12.0fc)) min(fmt(%12.0fc)) max(fmt(%12.0fc)) ") ///
+	noobs tex replace label nomtitles nonumbers fragment  collabels(N Mean Median "Std. Dev." Minimum Maximum )
+* Format table 
+import delim using summ_main1.tex , clear delim("XYZXYZ")
+replace v1 = v1 + " \addlinespace[.5ex] " if _n==1 
+replace v1 = v1 + " \addlinespace[1ex] \textit{Panel A. Full sample} \\ \addlinespace[.75ex] " if _n==2 
+replace v1 = v1 + " \addlinespace[1ex] \textit{Panel B. Pre-2001} \\ \addlinespace[.75ex] " if _n==13 
+replace v1 = v1 + " \addlinespace[1ex] \textit{Panel C. Post-2001} \\ \addlinespace[.75ex] " if _n==24 
+outfile using summ_main1_mod.tex, replace noquote 
+* Erase interim tex file
+erase summ_main1.tex
+
+* --------------------------------------------------------------------
+* Main results w/o software ("diffs_less_sw")
+* --------------------------------------------------------------------
+
+use mergers_by_year_size_sic_type,clear
+drop if acq_sic=="7372"
+collapse (sum) diff_4sic same_4sic,by(year_e ex_grp)
+
+foreach var1 in diff_4sic same_4sic  {
+	g log_`var1'=log(`var1')
+	g norm_`var1'=`var1'
+	foreach var2 in 1 2 {
+		quietly summ log_`var1' if year_e==2001 & ex_grp==`var2'
+		replace log_`var1'=log_`var1'-`r(mean)' if ex_grp==`var2'
+		quietly summ norm_`var1' if year_e==2001 & ex_grp==`var2'
+		replace norm_`var1'=norm_`var1'-`r(mean)' if ex_grp==`var2'
+		}
+	}
+	
+keep ex_grp year_e same_4sic diff_4sic
+rename same_4sic levels_1
+rename diff_4sic levels_2
+
+* Format for reg
+g logs_1=log(levels_1)
+g logs_2=log(levels_2)
+reshape long logs_ levels_,i(year_e ex_grp) j(num) 
+g post = year_e>2001
+g below=ex_grp==1
+g hor = num==1
+g iii = post*hor*below
+g ii1 = post*hor 
+g ii2 = post*hor 
+
+label var iii " $ I_i^H \cdot I_s^{Exempted} \cdot I_t^{Post} $ "
+label var ii1 " $ I_i^H \cdot I_t^{Post} $ \textit{(Never--exempt)}  n\quad \quad \quad \quad"
+label var ii2 " $ I_i^H \cdot I_t^{Post} $ \textit{(Newly--exempt)}"
+
+* in logs
+reg logs ii2 i.year c.hor if below==1, robust
+outreg2 using diffs_less_sw,replace tex(frag) label keep(iii ii1 ii2) ///
+	dec(3) fmt(gc) nonote ctitle(Newly-,exempt) nocons noas
+reg logs iii c.below i.year c.hor i.year#c.below i.year#c.hor c.below#c.hor , robust
+outreg2 using diffs_less_sw,append tex(frag) label keep(iii ii1 ii2) ///
+	dec(3) fmt(gc) nonote ctitle(All,mergers) nocons noas
+reg logs ii1 i.year c.hor if below==0, robust
+outreg2 using diffs_less_sw,append tex(frag) label keep(iii ii1 ii2) ///
+	dec(3) fmt(gc) nonote ctitle(Never-,exempt) nocons noas
+* in levels
+reg levels ii2 i.year c.hor if below==1, robust
+outreg2 using diffs_less_sw,append tex(frag) label keep(iii ii1 ii2) ///
+	dec(3) fmt(gc) nonote ctitle(Newly-,exempt) nocons noas
+reg levels iii c.below i.year c.hor i.year#c.below i.year#c.hor c.below#c.hor , robust
+outreg2 using diffs_less_sw,append tex(frag) label keep(iii ii1 ii2) ///
+	dec(3) fmt(gc) nonote ctitle(All,mergers) nocons noas
+reg levels ii1 i.year c.hor if below==0, robust
+outreg2 using diffs_less_sw,append tex(frag) label keep(iii ii1 ii2) ///
+	dec(3) fmt(gc) nonote ctitle(Never-,exempt) nocons noas
+erase diffs_less_sw.txt
+
+summ logs if below==1
+summ logs 
+summ logs if below==0
+summ levels if below==1
+summ levels 
+summ levels if below==0
+
+* --------------------------------------------------------------------
+* Main results w/o mergers valued at/over $150MM ("diffs_less_150")
+* --------------------------------------------------------------------
+
+use mergers_by_year_size_sic_type,clear
+drop if assets_sales_and_or_over_150==1
+collapse (sum) diff_4sic same_4sic,by(year_e ex_grp)
+
+foreach var1 in diff_4sic same_4sic  {
+	g log_`var1'=log(`var1')
+	g norm_`var1'=`var1'
+	foreach var2 in 1 2 {
+		quietly summ log_`var1' if year_e==2001 & ex_grp==`var2'
+		replace log_`var1'=log_`var1'-`r(mean)' if ex_grp==`var2'
+		quietly summ norm_`var1' if year_e==2001 & ex_grp==`var2'
+		replace norm_`var1'=norm_`var1'-`r(mean)' if ex_grp==`var2'
+		}
+	}
+ 
+g all_4sic=diff_4sic+same_4sic
+
+keep ex_grp year_e same_4sic diff_4sic
+rename same_4sic levels_1
+rename diff_4sic levels_2
+
+* Format for reg
+g logs_1=log(levels_1)
+g logs_2=log(levels_2)
+reshape long logs_ levels_,i(year_e ex_grp) j(num) 
+g post = year_e>2001
+g below=ex_grp==1
+g hor = num==1
+g iii = post*hor*below
+g ii1 = post*hor 
+g ii2 = post*hor 
+
+label var iii " $ I_i^H \cdot I_s^{Exempted} \cdot I_t^{Post} $ "
+label var ii1 " $ I_i^H \cdot I_t^{Post} $ \textit{(Never--exempt)} \quad \quad \quad \quad"
+label var ii2 " $ I_i^H \cdot I_t^{Post} $ \textit{(Newly--exempt)}"
+
+* in logs
+reg logs ii2 i.year c.hor if below==1, robust
+outreg2 using diffs_less_150,replace tex(frag) label keep(iii ii1 ii2) ///
+	dec(3) fmt(gc) nonote ctitle(Newly-,exempt) nocons noas
+reg logs iii c.below i.year c.hor i.year#c.below i.year#c.hor c.below#c.hor , robust
+outreg2 using diffs_less_150,append tex(frag) label keep(iii ii1 ii2) ///
+	dec(3) fmt(gc) nonote ctitle(All,mergers) nocons noas
+reg logs ii1 i.year c.hor if below==0, robust
+outreg2 using diffs_less_150,append tex(frag) label keep(iii ii1 ii2) ///
+	dec(3) fmt(gc) nonote ctitle(Never-,exempt) nocons noas
+* in levels
+reg levels ii2 i.year c.hor if below==1, robust
+outreg2 using diffs_less_150,append tex(frag) label keep(iii ii1 ii2) ///
+	dec(3) fmt(gc) nonote ctitle(Newly-,exempt) nocons noas
+reg levels iii c.below i.year c.hor i.year#c.below i.year#c.hor c.below#c.hor , robust
+outreg2 using diffs_less_150,append tex(frag) label keep(iii ii1 ii2) ///
+	dec(3) fmt(gc) nonote ctitle(All,mergers) nocons noas
+reg levels ii1 i.year c.hor if below==0, robust
+outreg2 using diffs_less_150,append tex(frag) label keep(iii ii1 ii2) ///
+	dec(3) fmt(gc) nonote ctitle(Never-,exempt) nocons noas
+erase diffs_less_150.txt
+
+summ logs if below==1
+summ logs 
+summ logs if below==0
+summ levels if below==1
+summ levels 
+summ levels if below==0
+
+* -------------------------------------------------------------------
+* Main results in dollars---not counts
+* -------------------------------------------------------------------
+use merged_data,clear
+keep ex_grp year_e same_4sic_doll diff_4sic_doll
+rename same_4sic_dollar levels_1
+rename diff_4sic_dollar levels_2
+
+* Format for reg
+g logs_1=log(levels_1)
+g logs_2=log(levels_2)
+reshape long logs_ levels_,i(year_e ex_grp) j(num) 
+g post = year_e>2001
+g below=ex_grp==1
+g hor = num==1
+g iii = post*hor*below
+g ii1 = post*hor 
+g ii2 = post*hor 
+
+label var iii " $ I_i^H \cdot I_s^{Exempted}  \cdot I_t^{Post} $ "
+label var ii1 " $ I_i^H \cdot I_t^{Post} $ \textit{(Never--exempt)} \quad \quad \quad \quad"
+label var ii2 " $ I_i^H \cdot I_t^{Post} $ \textit{(Newly--exempt)}"
+
+* in logs
+reg logs ii2 i.year c.hor if below==1, robust
+outreg2 using diffs_dollars,replace tex(frag) label keep(iii ii1 ii2) ///
+	dec(3) fmt(gc) nonote ctitle(Newly-,exempt) nocons noas
+reg logs iii c.below i.year c.hor i.year#c.below i.year#c.hor c.below#c.hor , robust
+outreg2 using diffs_dollars,append tex(frag) label keep(iii ii1 ii2) ///
+	dec(3) fmt(gc) nonote ctitle(All,mergers) nocons noas
+reg logs ii1 i.year c.hor if below==0, robust
+outreg2 using diffs_dollars,append tex(frag) label keep(iii ii1 ii2) ///
+	dec(3) fmt(gc) nonote ctitle(Never-,exempt) nocons noas
+* in levels
+reg levels ii2 i.year c.hor if below==1, robust
+outreg2 using diffs_dollars,append tex(frag) label keep(iii ii1 ii2) ///
+	dec(3) fmt(gc) nonote ctitle(Newly-,exempt) nocons noas
+reg levels iii c.below i.year c.hor i.year#c.below i.year#c.hor c.below#c.hor , robust
+outreg2 using diffs_dollars,append tex(frag) label keep(iii ii1 ii2) ///
+	dec(3) fmt(gc) nonote ctitle(All,mergers) nocons noas
+reg levels ii1 i.year c.hor if below==0, robust
+outreg2 using diffs_dollars,append tex(frag) label keep(iii ii1 ii2) ///
+	dec(3) fmt(gc) nonote ctitle(Never-,exempt) nocons noas
+erase diffs_dollars.txt
+
+summ logs if below==1
+summ logs 
+summ logs if below==0
+summ levels if below==1
+summ levels 
+summ levels if below==0
+
+* Erase remaining interim files to keep folder clean
+erase merged_data.dta
+erase sic_codes.dta
+erase mergers_by_year_size_sic_type.dta
+erase mergers_by_stealth_type_sic.dta
+
+clear
+
