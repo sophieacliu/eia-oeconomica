@@ -1,5 +1,5 @@
 # eia-oeconomica
-The home of all code for the Oeconomica Entrepreneurship, Innovation, and Antitrust cohort for 2020–2021.
+The home of all code for the Oeconomica Entrepreneurship, Innovation & Antitrust cohort for 2020–2021.
 
 Make tutorials folder (include both skills and replications)
 
