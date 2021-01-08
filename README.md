@@ -29,4 +29,4 @@ When the code in this repository is changed, you will need to update your fork t
 
 The timeline and tasks to do for our project are under the "Projects" tab of this repository (https://github.com/gelkouh/eia-oeconomica/projects).
 
-You can review and explore the fall economic history and theory lectures here: https://drive.google.com/drive/u/1/folders/1tVogZxYUKvoSj0J0IjfZJArn-1SFn_5r
+You can review and explore our lectures slides on the economic history and theory of entrepreneurship, innovation, and antitrust here: https://drive.google.com/drive/u/1/folders/1tVogZxYUKvoSj0J0IjfZJArn-1SFn_5r
