@@ -22,7 +22,9 @@ We are now going to do a couple things to set up GitHub with R:
 
 The `data.R` file will allow us to write code that is system agnostic: in other words, our code can call a standard file (`data.R`) that we will have on all our machines, and then we will have an object called `ddir` in our R environment which can be used to tell our computer where to look for data. 
 
+(Thank you to https://github.com/ekarsten for the framework for some of this data management section.)
+
 # Updating your fork and other odds and ends
 When the code in this repository is changed, you will need to update your fork to reflect these changes. For instructions on how to do this, in addition to other short tutorials on relevant GitHub and coding related tasks, see the "Wiki" tab of this repository (https://github.com/gelkouh/eia-oeconomica/wiki).
 
-(thank you to https://github.com/ekarsten for the framework for some of the data management section)
+The timeline and tasks to do for our project are under the "Projects" tab of this repository (https://github.com/gelkouh/eia-oeconomica/projects).
