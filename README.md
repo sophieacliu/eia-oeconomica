@@ -28,3 +28,5 @@ The `data.R` file will allow us to write code that is system agnostic: in other 
 When the code in this repository is changed, you will need to update your fork to reflect these changes. For instructions on how to do this, in addition to other short tutorials on relevant GitHub and coding related tasks, see the "Wiki" tab of this repository (https://github.com/gelkouh/eia-oeconomica/wiki).
 
 The timeline and tasks to do for our project are under the "Projects" tab of this repository (https://github.com/gelkouh/eia-oeconomica/projects).
+
+You can review and explore the fall economic history and theory lectures here: https://drive.google.com/drive/u/1/folders/1tVogZxYUKvoSj0J0IjfZJArn-1SFn_5r
