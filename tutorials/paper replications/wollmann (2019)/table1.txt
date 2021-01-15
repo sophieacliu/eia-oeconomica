@@ -1,0 +1,25 @@
+
+\begin{table}
+\begin{center}
+\begin{tabular}{l c c c}
+\hline
+ & Model 1 & Model 2 & Model 3 \\
+\hline
+$ I_i^H \cdot I_s^{Exempted} \cdot I_t^{Post} $                             & $0.19$   &          &          \\
+                                                                            & $(0.05)$ &          &          \\
+$ I_i^H \cdot I_t^{Post} $ \textit{(Never--exempt)} \quad \quad \quad \quad &          & $0.22$   &          \\
+                                                                            &          & $(0.05)$ &          \\
+$ I_i^H \cdot I_t^{Post} $ \textit{(Newly--exempt)}                         &          &          & $-0.03$  \\
+                                                                            &          &          & $(0.04)$ \\
+\hline
+R$^2$                                                                       & $0.99$   & $1.00$   & $0.99$   \\
+Adj. R$^2$                                                                  & $0.97$   & $0.99$   & $0.98$   \\
+Num. obs.                                                                   & $36$     & $72$     & $36$     \\
+RMSE                                                                        & $0.07$   & $0.06$   & $0.06$   \\
+\hline
+\end{tabular}
+\caption{Statistical models}
+\label{table:coefficients}
+\end{center}
+\end{table}
+
