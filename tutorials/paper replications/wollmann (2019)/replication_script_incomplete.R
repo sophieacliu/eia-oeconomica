@@ -26,7 +26,6 @@ ddir <- file.path(ddir, 'paper replications/wollmann (2019)/replication files')
 # Load necessary packages
 if (!require(tidyverse)) install.packages('tidyverse')
 library(tidyverse)
-library(dplyr)
 library(readxl)
 if (!require(reshape2)) install.packages('reshape2')
 library(reshape2)
@@ -36,8 +35,8 @@ if (!require(gridExtra)) install.packages('gridExtra')
 library(gridExtra)
 if (!require(estimatr)) install.packages('estimatr')
 library(estimatr)
-if (!require(stargazer)) install.packages('stargazer')
-library(stargazer)
+if (!require(texreg)) install.packages('texreg')
+library(texreg)
 
 # Make sure that you do not have any packages attached such that functions are masked from the 
 # packages loaded above
