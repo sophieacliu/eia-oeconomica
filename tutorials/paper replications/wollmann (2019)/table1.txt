@@ -1,21 +1,21 @@
 
 \begin{table}
 \begin{center}
-\begin{tabular}{l c c c}
+\begin{tabular}{l c c c c c c}
 \hline
- & Model 1 & Model 2 & Model 3 \\
+ & Model 1 & Model 2 & Model 3 & Model 4 & Model 5 & Model 6 \\
 \hline
-$ I_i^H \cdot I_s^{Exempted} \cdot I_t^{Post} $                             & $0.19$   &          &          \\
-                                                                            & $(0.05)$ &          &          \\
-$ I_i^H \cdot I_t^{Post} $ \textit{(Never--exempt)} \quad \quad \quad \quad &          & $0.22$   &          \\
-                                                                            &          & $(0.05)$ &          \\
-$ I_i^H \cdot I_t^{Post} $ \textit{(Newly--exempt)}                         &          &          & $-0.03$  \\
-                                                                            &          &          & $(0.04)$ \\
+$ I_i^H \cdot I_s^{Exempted} \cdot I_t^{Post} $                             & $0.19$   &          &          & $323.98$  &           &           \\
+                                                                            & $(0.05)$ &          &          & $(87.35)$ &           &           \\
+$ I_i^H \cdot I_t^{Post} $ \textit{(Never--exempt)} \quad \quad \quad \quad &          & $0.22$   &          &           & $252.90$  &           \\
+                                                                            &          & $(0.05)$ &          &           & $(53.96)$ &           \\
+$ I_i^H \cdot I_t^{Post} $ \textit{(Newly--exempt)}                         &          &          & $-0.03$  &           &           & $71.08$   \\
+                                                                            &          &          & $(0.04)$ &           &           & $(77.19)$ \\
 \hline
-R$^2$                                                                       & $0.99$   & $1.00$   & $0.99$   \\
-Adj. R$^2$                                                                  & $0.97$   & $0.99$   & $0.98$   \\
-Num. obs.                                                                   & $36$     & $72$     & $36$     \\
-RMSE                                                                        & $0.07$   & $0.06$   & $0.06$   \\
+R$^2$                                                                       & $0.99$   & $1.00$   & $0.99$   & $0.96$    & $1.00$    & $0.95$    \\
+Adj. R$^2$                                                                  & $0.97$   & $0.99$   & $0.98$   & $0.91$    & $0.98$    & $0.89$    \\
+Num. obs.                                                                   & $36$     & $72$     & $36$     & $36$      & $72$      & $36$      \\
+RMSE                                                                        & $0.07$   & $0.06$   & $0.06$   & $120.42$  & $56.38$   & $112.44$  \\
 \hline
 \end{tabular}
 \caption{Statistical models}
