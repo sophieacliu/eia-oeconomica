@@ -217,4 +217,4 @@ table1 <- texreg(list(reg1, reg2, reg3), include.ci = FALSE, stars = numeric(0),
                                         'iii' = " $ I_i^H \\cdot I_t^{Post} $ \\textit{(Never--exempt)} \\quad \\quad \\quad \\quad",
                                         'ii1' = " $ I_i^H \\cdot I_t^{Post} $ \\textit{(Newly--exempt)}"))
 
-write.table(table1, file.path(root, 'tutorials/paper replications/wollmann (2019)', 'table1.txt'), col.names = FALSE, row.names = FALSE, quote = FALSE)
+write.table(table1, file.path(root, 'tutorials/paper replications/wollmann (2019)', 'table1.tex'), col.names = FALSE, row.names = FALSE, quote = FALSE)
