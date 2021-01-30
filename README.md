@@ -17,7 +17,7 @@ We are now going to do a couple things to set up GitHub with R:
   - Click "Create Project"
 - In your new R project, locate the file called: `data.R`
   - In this file, change the following line of code to reflect the path to the `data` folder on your computer (if you downloaded the data via the link above, then this folder is just the unzipped folder from the download): `ddir <- "/Users/gelkouh/Google Drive (UChicago)/EIA Cohort (Shared Folder)/data"` 
-  - (note: you may need to begin the file path in your code with `C:` depending on the operating system your computer uses)
+  - (note: you may need to begin the file path in your code with `C:` and ensure you are using the forward slash `/` in your file path depending on the operating system your computer uses)
   - Make sure you save the `data.R` file and keep it where it is
 
 The `data.R` file will allow us to write code that is system agnostic: in other words, our code can call a standard file (`data.R`) that we will have on all our machines, and then we will have an object called `ddir` in our R environment which can be used to tell our computer where to look for data. 

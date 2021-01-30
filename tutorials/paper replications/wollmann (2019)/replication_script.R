@@ -77,7 +77,7 @@ mergers_by_stealth_type_sic_df <- read_excel(file.path(ddir,'mergers_by_stealth_
 mergers_by_year_size_sic_type_df <- mergers_by_year_size_sic_type_df %>%
   group_by(year_e, ex_grp) %>%
   summarise(diff_4sic = sum(diff_4sic), same_4sic = sum(same_4sic), 
-            diff_4sic_dollars = sum(diff_4sic_dollars), same_4sic_dollars = sum(same_4sic_dollars))
+         diff_4sic_dollars = sum(diff_4sic_dollars), same_4sic_dollars = sum(same_4sic_dollars))
 
 # Log variables that are in levels. Also, reduce by value the resulting 
 # variables take in 2001, which is the year of the Amendment. 
@@ -111,9 +111,7 @@ merged_data_df <- merged_data_df %>%
   ungroup()
 
 # Eliminate interim files that will not be used again
-rm(sic_codes_sheets)
-rm(sic_codes)
-rm(notif_and_invest_and_block_df)
+rm(list = c('sic_codes_sheets', 'sic_codes', 'notif_and_invest_and_block_df'))
 
 ##-----##
 # Create figure1
@@ -136,11 +134,12 @@ figure1 <- ggplot(merged_data_df,aes(x = year_e, y = trans_hsr_a_and_b)) +
         axis.text.x = element_text(size = 10, color = 'black'),
         axis.title = element_text(size = 10))
 
+# Save figure
 ggsave(file.path(root, 'tutorials/paper replications/wollmann (2019)', 'figure1.pdf'), 
        plot = figure1, width = 8/1.5, height = 6/1.5)
 
 ##-----##
-# Create figure2 — TRY IT YOURSELF!!
+# Create figure2
 ##-----##
 
 # Figure 2. Nearly all of the Decline in Notifications and Investigations Occurs among Newly-Exempt Mergers
@@ -150,12 +149,107 @@ ggsave(file.path(root, 'tutorials/paper replications/wollmann (2019)', 'figure1.
 # marks 2001, the year the Act was amended to raise the size-of-transactions threshold. Note that the vertical distance 
 # between the dashed lines in panel D represents non-HSR-related investigations (of which there are few).
 
-# Hints: 
-# Colors to use: 'darkred', '#014d64' (blue), 'black', 'red', '#506b2f' (green)
-# Use grid.arrange() from the gridExtra package with ncol = 2
+figure2_11 <- ggplot(data = filter(merged_data_df, ex_grp == 2)) +
+  geom_line(aes(x = year_e, y = all_4sic, color = 'Mergers')) +
+  geom_line(aes(x = year_e, y = trans_hsr, color = 'Notifications'), linetype = 2) +
+  geom_vline(xintercept = 2001, color = 'red', size = 0.5) +
+  expand_limits(x = c(1993,2011), y = -5) +
+  scale_y_continuous(breaks = c(0,1000,2000)) +
+  xlab('Year') +
+  ylab('Count') +
+  scale_color_manual(values = c(
+    'Mergers' = '#014d64',
+    'Notifications' = 'darkred')) +
+  labs(color = '') +
+  guides(color = guide_legend(override.aes = list(linetype = c("solid", "dashed")))) +
+  theme(axis.line = element_line(color = "black"), panel.background = element_blank(),
+        axis.text.y = element_text(angle = 90, hjust = 0.5, size = 10, color = 'black'),
+        axis.text.x = element_text(size = 10, color = 'black'),
+        axis.title = element_text(size = 10),
+        legend.position = "bottom",
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black")) + 
+  ggtitle('Panel A. Notifications of never-exempt mergers')
+figure2_12<- ggplot(data = filter(merged_data_df, ex_grp == 1)) +
+  geom_line(aes(x = year_e, y = all_4sic, color = 'Mergers')) +
+  geom_line(aes(x = year_e, y = trans_hsr, color = 'Notifications'), linetype = 2) +
+  geom_vline(xintercept = 2001, color = 'red', size = 0.5) +
+  expand_limits(x = c(1993,2011), y = -5) +
+  scale_y_continuous(breaks = c(0,1000,2000,3000)) +
+  xlab('Year') +
+  ylab('Count') +
+  scale_color_manual(values = c(
+    'Mergers' = '#014d64',
+    'Notifications' = 'darkred')) +
+  labs(color = '') +
+  guides(color = guide_legend(override.aes = list(linetype = c("solid", "dashed")))) +
+  theme(axis.line = element_line(color = "black"), panel.background = element_blank(),
+        axis.text.y = element_text(angle = 90, hjust = 0.5, size = 10, color = 'black'),
+        axis.text.x = element_text(size = 10, color = 'black'),
+        axis.title = element_text(size = 10),
+        legend.position = "bottom",
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black")) + 
+  ggtitle('Panel B. Notifications of newly-exempt mergers')
+figure2_21 <- ggplot(data = filter(merged_data_df, ex_grp == 2)) +
+  geom_line(aes(x = year_e, y = all_4sic, color = 'Mergers')) +
+  geom_line(aes(x = year_e, y = c_above*2000/350, color = 'Investigations'), linetype = 2) +
+  geom_vline(xintercept = 2001, color = 'red', size = 0.5) +
+  expand_limits(x = c(1993,2011), y = c(475,2000)) +
+  xlab('Year') +
+  ylab('Count') +
+  scale_color_manual(values = c(
+    'Investigations' = 'darkred',
+    'Mergers' = '#014d64')) +
+  labs(color = '') +
+  guides(color = guide_legend(override.aes = list(linetype = c("dashed","solid")))) +
+  theme(axis.line = element_line(color = "black"), panel.background = element_blank(),
+        axis.text.y = element_text(angle = 90, hjust = 0.5, size = 10, color = 'black'),
+        axis.text.x = element_text(size = 10, color = 'black'),
+        axis.title = element_text(size = 10),
+        legend.position = "bottom",
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black")) +
+  scale_y_continuous(sec.axis = sec_axis(~ . * 350/2000)) + 
+  ggtitle('Panel C. Investigations into never-exempt mergers')
+figure2_22 <- ggplot(data = filter(merged_data_df, ex_grp == 1)) +
+  geom_line(aes(x = year_e, y = all_4sic, color = 'Mergers')) +
+  geom_line(aes(x = year_e, y = c_below*3000/250, color = 'HSR-only invest.'), linetype = 2) +
+  geom_line(aes(x = year_e, y = c_all_below_nonhsr_cid*3000/250, color = 'Investigations'), linetype = 5) +
+  geom_vline(xintercept = 2001, color = 'red', size = 0.5) +
+  expand_limits(x = c(1993,2011), y = c(-5,3010)) +
+  xlab('Year') +
+  ylab('Count') +
+  scale_color_manual(values = c(
+    'Investigations' = '#506b2f',
+    'HSR-only invest.' = 'darkred',
+    'Mergers' = '#014d64')) +
+  labs(color = '') +
+  guides(color = guide_legend(override.aes = list(linetype = c("dashed","longdash","solid")))) +
+  theme(axis.line = element_line(color = "black"), panel.background = element_blank(),
+        axis.text.y = element_text(angle = 90, hjust = 0.5, size = 10, color = 'black'),
+        axis.text.x = element_text(size = 10, color = 'black'),
+        axis.title = element_text(size = 10),
+        legend.position = "bottom",
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black")) +
+  scale_y_continuous(sec.axis = sec_axis(~ . * 250/3000)) + 
+  ggtitle('Panel D. Investigations into newly-exempt mergers')
+
+figure2 <- grid.arrange(figure2_11, figure2_12, figure2_21, figure2_22, ncol = 2)
+
+# Save figure
+ggsave(file.path(root, 'tutorials/paper replications/wollmann (2019)', 'figure2.pdf'), 
+       plot = figure2, width = 8*1.2, height = 6*1.2)
+
+rm(list = c('figure2_11','figure2_12','figure2_21','figure2_22'))
 
 ##-----##
-# Create figure3 — TRY IT YOURSELF!! 
+# Create figure3
 ##-----##
 
 # Figure 3. Newly-Exempt Horizontal Mergers Increase following the Amendment
@@ -164,8 +258,63 @@ ggsave(file.path(root, 'tutorials/paper replications/wollmann (2019)', 'figure1.
 # the year the Act was amended to raise the size-of-transactions threshold. To facilitate comparisons, all plotted val- 
 # ues are reduced by the value they take in that year (so that the lines that connect them intersect y = 0 in 2001).
 
+figure3_11 <- ggplot(data = filter(merged_data_df, ex_grp == 2)) +
+  geom_line(aes(x = year_e, y = log_diff_4sic, color = 'Non-horizontal'), linetype = 5) +
+  geom_line(aes(x = year_e, y = log_same_4sic, color = 'Horizontal'), linetype = 2) +
+  geom_vline(xintercept = 2001, color = 'red', size = 0.5) +
+  expand_limits(x = c(1993,2011), y = c(-1,0.5)) +
+  scale_y_continuous(breaks = c(-1,-0.5,0,0.5)) +
+  ylab('Log count') +
+  xlab('') +
+  scale_color_manual(values = c(
+    'Non-horizontal' = '#014d64',
+    'Horizontal' = 'darkred')) +
+  labs(color = '') +
+  guides(color = guide_legend(override.aes = list(linetype = c("dashed", "longdash")))) +
+  theme(axis.line = element_line(color = "black"), panel.background = element_blank(),
+        axis.text.y = element_text(angle = 90, hjust = 0.5, size = 10, color = 'black'),
+        axis.text.x = element_text(size = 10, color = 'black'),
+        axis.title = element_text(size = 10),
+        legend.position = "bottom",
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black"),
+        plot.title = element_text(hjust = 0.5)) +
+  ggtitle('Panel A: Never-exempt mergers')
+figure3_21 <- ggplot(data = filter(merged_data_df, ex_grp == 1)) +
+  geom_line(aes(x = year_e, y = log_diff_4sic, color = 'Non-horizontal'), linetype = 5) +
+  geom_line(aes(x = year_e, y = log_same_4sic, color = 'Horizontal'), linetype = 2) +
+  geom_vline(xintercept = 2001, color = 'red', size = 0.5) +
+  expand_limits(x = c(1993,2011), y = c(-0.2,0.6)) +
+  scale_y_continuous(breaks = c(-0.2,0,0.2,0.4,0.6)) +
+  ylab('Log count') +
+  xlab('Year') +
+  scale_color_manual(values = c(
+    'Non-horizontal' = '#014d64',
+    'Horizontal' = 'darkred')) +
+  labs(color = '') +
+  guides(color = guide_legend(override.aes = list(linetype = c("dashed", "longdash")))) +
+  theme(axis.line = element_line(color = "black"), panel.background = element_blank(),
+        axis.text.y = element_text(angle = 90, hjust = 0.5, size = 10, color = 'black'),
+        axis.text.x = element_text(size = 10, color = 'black'),
+        axis.title = element_text(size = 10),
+        legend.position = "bottom",
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black"),
+        plot.title = element_text(hjust = 0.5)) + 
+  ggtitle('Panel B: Newly-exempt mergers')
+
+figure3 <- grid.arrange(figure3_11, figure3_21, ncol = 1)
+
+# Save figure
+ggsave(file.path(root, 'tutorials/paper replications/wollmann (2019)', 'figure3.pdf'), 
+       plot = figure3, width = 6, height = 8)
+
+rm(list = c('figure3_11','figure3_21'))
+
 ##-----##
-# Table 1 ("diffs") — TRY TO FINISH THE TABLE YOURSELF!! (i.e., reg4, reg5, reg6)
+# Table 1 ("diffs")
 ##-----##
 
 table1_df <- merged_data_df %>%
@@ -200,21 +349,29 @@ rm(logs_interim_df)
 
 # in logs
 reg1 <- lm_robust(logs ~ ii2 + factor(year_e) + as.numeric(hor), 
-                  data = filter(table1_df, below == 1), se_type = "stata")
+          data = filter(table1_df, below == 1), se_type = "stata")
 
 reg2 <- lm_robust(logs ~ iii + as.numeric(below) + factor(year_e) + as.numeric(hor) + factor(year_e):as.numeric(below) +
+            factor(year_e):as.numeric(hor) + as.numeric(below):as.numeric(hor),
+          data = table1_df, se_type = "stata")
+
+reg3 <- lm_robust(logs ~ ii1 + factor(year_e) + as.numeric(hor), 
+          data = filter(table1_df, below == 0), se_type = "stata")
+
+# in levels
+reg4 <- lm_robust(levels ~ ii2 + factor(year_e) + as.numeric(hor), 
+                  data = filter(table1_df, below == 1), se_type = "stata")
+
+reg5 <- lm_robust(levels ~ iii + as.numeric(below) + factor(year_e) + as.numeric(hor) + factor(year_e):as.numeric(below) +
                     factor(year_e):as.numeric(hor) + as.numeric(below):as.numeric(hor),
                   data = table1_df, se_type = "stata")
 
-reg3 <- lm_robust(logs ~ ii1 + factor(year_e) + as.numeric(hor), 
+reg6 <- lm_robust(levels ~ ii1 + factor(year_e) + as.numeric(hor), 
                   data = filter(table1_df, below == 0), se_type = "stata")
 
-# in levels
-# repeat the above for reg4, reg5, reg6 but with `levels` as the response variable
-
-table1 <- texreg(list(reg1, reg2, reg3), include.ci = FALSE, stars = numeric(0), 
-                 custom.coef.map = list('ii2'= " $ I_i^H \\cdot I_s^{Exempted} \\cdot I_t^{Post} $ ",
-                                        'iii' = " $ I_i^H \\cdot I_t^{Post} $ \\textit{(Never--exempt)} \\quad \\quad \\quad \\quad",
-                                        'ii1' = " $ I_i^H \\cdot I_t^{Post} $ \\textit{(Newly--exempt)}"))
+table1 <- texreg(list(reg1, reg2, reg3, reg4, reg5, reg6), include.ci = FALSE, stars = numeric(0), 
+       custom.coef.map = list('ii2'= " $ I_i^H \\cdot I_s^{Exempted} \\cdot I_t^{Post} $ ",
+                              'iii' = " $ I_i^H \\cdot I_t^{Post} $ \\textit{(Never--exempt)} \\quad \\quad \\quad \\quad",
+                              'ii1' = " $ I_i^H \\cdot I_t^{Post} $ \\textit{(Newly--exempt)}"))
 
 write.table(table1, file.path(root, 'tutorials/paper replications/wollmann (2019)', 'table1.tex'), col.names = FALSE, row.names = FALSE, quote = FALSE)

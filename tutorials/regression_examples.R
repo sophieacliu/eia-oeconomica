@@ -4,6 +4,7 @@
 
 # Load the following packages (you may have to install these and some dependencies)
 library(AER) # loads data
+library(tidyverse)
 library(plm) # working with panel data (and fixed effects)
 library(stargazer) # makes regression tables pretty
 
